@@ -39,14 +39,23 @@ def find_game_install_path():
 def find_story_data_dir(game_path):
     """
     Finds the directory containing story data within the game path.
-    Standard path: .../UmamusumePrettyDerby_Jpn_Data/Persistent/assets/_gallopresources/bundle/resources/story/data
+    Supports both native structure (Persistent/) and extracted structure.
     """
-    # Try JP Data path first
+    # 1. Native Structure: Check if the path itself is the 'Persistent' folder (contains master/master.mdb)
+    if os.path.exists(os.path.join(game_path, "master", "master.mdb")):
+        return game_path
+        
+    # 2. Native Structure: Check if path is Game Root (contains UmamusumePrettyDerby_Jpn_Data/Persistent)
+    persistent_check = os.path.join(game_path, "UmamusumePrettyDerby_Jpn_Data", "Persistent")
+    if os.path.exists(os.path.join(persistent_check, "master", "master.mdb")):
+        return persistent_check
+
+    # 3. Extracted/Deep Structure (Legacy/Mock)
+    # Standard path: .../UmamusumePrettyDerby_Jpn_Data/Persistent/assets/_gallopresources/bundle/resources/story/data
     jp_path = os.path.join(game_path, "UmamusumePrettyDerby_Jpn_Data", "Persistent", "assets", "_gallopresources", "bundle", "resources", "story", "data")
     if os.path.exists(jp_path):
         return jp_path
         
-    # TODO: Add Global path logic if structure differs
     return None
 
 def list_stories(story_base_dir):
@@ -55,25 +64,60 @@ def list_stories(story_base_dir):
     Returns a simplified list of files for now: [{"id": "020001004", "path": "...", "category": "02", "group": "0001"}]
     """
     stories = []
-    # Use glob to find all storytimeline files recursively
-    # Structure: category/group/storytimeline_ID.json or .unity3d (if raw)
-    # The browser extension extraction logic seems to assume we are reading the unpacked assets or bundle files?
-    # The mock path ended in .json, implying the user might be extracting them or looking at unpacked assets.
-    # UnityPy can read .unity3d bundles directly.
-    # But usually, _gallopresources/... are individual asset bundles (without extension or with hash).
-    # Wait, the user's mock path was .json.
-    # "storytimeline_020001004.json"
     
-    # If we assume the user has DUMPED the assets to JSON (which the tool might do?),
-    # OR if we are looking for the original bundles.
-    # Original bundles in DMM/Steam version are usually in `dat` format or hashed filenames in `master/`?
-    # Actually, `UmamusumePrettyDerby_Jpn_Data/Persistent` usually implies downloaded assets.
-    # Let's search for any file pattern matching the story timeline naming convention if possible, 
-    # but more robustly, just list files.
-     
-    # For this prototype, let's search for `.json` files as per the mock, 
-    # AND also just list directories to let user navigate.
+    # Check for native Game structure
+    # Expected: .../Persistent/master/master.mdb
+    master_path = os.path.join(story_base_dir, "master", "master.mdb")
     
+    if os.path.exists(master_path):
+        # We need to query the DB for story timeline entries
+        # This requires APSW which is in our requirements.
+        # We can use py_bridge logic to query it.
+        import py_bridge
+        
+        # Query to find main story chapters (simplistic example)
+        # story_data table usually contains the mapping.
+        # Let's try to find stories from `text_data` or `story_timeline` related tables?
+        # Actually proper logic is complex. For a "Shell", let's just list what we can cheaply.
+        # But if we can't query, we can't list.
+        
+        # Fallback: Just look for 'storytimeline' in the `dat` if they are unpacked?
+        # No, they are hashed.
+        
+        try:
+            # Query MAIN STORIES
+            # Table: main_story_data
+            # Columns: story_id_1 (Timeline ID), part_id (Group), story_number, id (Episode ID)
+            # We filter for story_id_1 > 0 to get actual story scripts.
+            res = py_bridge.handle_query_db({
+                "db_path": master_path,
+                "query": "SELECT story_id_1, part_id, story_number, id FROM main_story_data WHERE story_id_1 > 0 LIMIT 200", 
+                "key": None
+            })
+            
+            # If successful, parse rows
+            if res and 'rows' in res:
+                for row in res['rows']:
+                    # row: [story_id_1, part_id, story_number, episode_id]
+                    story_id = str(row[0])
+                    part_id = str(row[1])
+                    episode_id = str(row[3])
+                    
+                    stories.append({
+                        "id": story_id,
+                        "path": f"native://{story_id}", # Placeholder for native loading
+                        "rel_path": f"Main/Part{part_id}/Ep{episode_id}",
+                        "category": "Main",
+                        "group": f"Part {part_id}"
+                    })
+        except Exception as e:
+            print(f"Failed to query master.mdb: {e}")
+            # Silently fail or log, don't break the UI with error items for now? 
+            # Or keep error item if really busted.
+            # Let's just print to console, as we want to fallback to glob if this fails.
+
+            
+    # Also continue to glob for JSONs (extracted mode)
     search_pattern = os.path.join(story_base_dir, "**", "storytimeline_*.json")
     files = glob.glob(search_pattern, recursive=True)
     
@@ -81,7 +125,6 @@ def list_stories(story_base_dir):
         rel_path = os.path.relpath(f, story_base_dir)
         parts = rel_path.split(os.sep)
         
-        # Expect category/group/filename
         if len(parts) >= 3:
             category = parts[0]
             group = parts[1]

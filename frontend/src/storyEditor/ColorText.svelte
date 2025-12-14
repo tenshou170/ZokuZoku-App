@@ -1,7 +1,11 @@
 <script lang="ts">
-    import { StoryTextSlotType, type ControllerMessage, type IStoryTextSlot } from "../sharedTypes";
+    import {
+        StoryTextSlotType,
+        type ControllerMessage,
+        type IStoryTextSlot,
+    } from "../sharedTypes";
     import { currentPath, currentTextSlots } from "../stores";
-    import { vscode } from "../vscode";
+    import { postMessageToController } from "../messageBus";
 
     export let content: string;
     export let translated: boolean = false;
@@ -18,13 +22,12 @@
                 if (startSlot == textSlots.length) startSlot = i;
                 if (translated) {
                     colorTextList.push("");
-                    vscode.postMessage({
+                    postMessageToController({
                         type: "getTextSlotContent",
                         entryPath: $currentPath,
-                        index: i
+                        index: i,
                     });
-                }
-                else {
+                } else {
                     colorTextList.push(slot.content);
                 }
             }
@@ -34,22 +37,22 @@
     }
 
     function makeDisplay(content: string, colorTextList: string[]) {
-        const res: { chunk: string, isColorText: boolean }[] = [];
+        const res: { chunk: string; isColorText: boolean }[] = [];
         let prevEnd = 0;
-        for (let i = 0; i < content.length;) {
+        for (let i = 0; i < content.length; ) {
             let found = false;
             for (const text of colorTextList) {
                 if (text && content.startsWith(text, i)) {
                     if (i != prevEnd) {
                         res.push({
                             chunk: content.slice(prevEnd, i),
-                            isColorText: false
+                            isColorText: false,
                         });
                     }
                     const end = i + text.length;
                     res.push({
                         chunk: content.slice(i, end),
-                        isColorText: true
+                        isColorText: true,
                     });
                     prevEnd = end;
                     i = end;
@@ -62,7 +65,7 @@
         if (prevEnd < content.length) {
             res.push({
                 chunk: content.slice(prevEnd, content.length),
-                isColorText: false
+                isColorText: false,
             });
         }
         return res;
@@ -70,16 +73,18 @@
 
     let onMessage: ((e: MessageEvent<ControllerMessage>) => void) | undefined;
     if (translated) {
-        onMessage = e => {
+        onMessage = (e) => {
             const message = e.data;
             if (message.type == "setTextSlotContent") {
-                if (message.entryPath.join("/") == $currentPath.join("/") &&
+                if (
+                    message.entryPath.join("/") == $currentPath.join("/") &&
                     message.index >= startSlot
                 ) {
-                    colorTextList[message.index - startSlot] = message.content ?? "";
+                    colorTextList[message.index - startSlot] =
+                        message.content ?? "";
                 }
             }
-        }
+        };
     }
 </script>
 

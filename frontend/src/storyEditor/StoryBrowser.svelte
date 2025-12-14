@@ -9,6 +9,23 @@
     let stories: any[] = [];
     let error: string | null = null;
     let search = "";
+    let manualPath = "";
+
+    async function loadManual() {
+        if (!manualPath) return;
+        loading = true;
+        try {
+            const res = await api.getGameStories(manualPath);
+            stories = res.stories;
+            error = null;
+            // Persist valid path to config if possible, or just local state?
+            // Ideally backend would remember, but for now just using it for this session.
+        } catch (e: any) {
+            error = e.message;
+        } finally {
+            loading = false;
+        }
+    }
 
     async function init() {
         try {
@@ -28,9 +45,8 @@
 
     onMount(init);
 
-    $: filteredStories = stories.filter(s => 
-        s.id.includes(search) || 
-        (s.group && s.group.includes(search))
+    $: filteredStories = stories.filter(
+        (s) => s.id.includes(search) || (s.group && s.group.includes(search)),
     );
 </script>
 
@@ -44,6 +60,18 @@
             {#if config}
                 <p>Detected Path: {config.game_path || "None"}</p>
             {/if}
+
+            <div class="manual-path">
+                <p>Enter Game Directory Manualy:</p>
+                <input
+                    type="text"
+                    bind:value={manualPath}
+                    placeholder="/path/to/UmamusumePrettyDerby"
+                />
+                <button on:click={loadManual}>Load</button>
+            </div>
+
+            <p>Or try auto-detect again:</p>
             <button on:click={init}>Retry</button>
         </div>
     {:else}
@@ -52,12 +80,14 @@
             <input type="text" placeholder="Search ID..." bind:value={search} />
             <p>Found {filteredStories.length} stories</p>
         </div>
-        
+
         <div class="list">
             {#each filteredStories as story}
                 <button class="story-item" on:click={() => onSelect(story)}>
                     <span class="id">{story.id}</span>
-                    <span class="meta">Cat: {story.category} | Grp: {story.group}</span>
+                    <span class="meta"
+                        >Cat: {story.category} | Grp: {story.group}</span
+                    >
                 </button>
             {/each}
         </div>
@@ -110,5 +140,22 @@
     }
     .error {
         color: var(--vscode-errorForeground);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .manual-path {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+        max-width: 400px;
+    }
+    .manual-path input {
+        padding: 5px;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border, transparent);
     }
 </style>

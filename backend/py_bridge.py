@@ -93,11 +93,11 @@ def handle_query_db(params):
     query = params.get('query')
     key = params.get('key')
 
-    if not key:
-        raise ValueError("'key' parameter is missing for query_db")
-
     db_uri = Path(db_path).as_uri()
-    conn_str = f"{db_uri}?mode=ro&hexkey={key}"
+    conn_str = f"{db_uri}?mode=ro"
+    if key:
+        conn_str += f"&hexkey={key}"
+        
     db = apsw.Connection(conn_str, flags=apsw.SQLITE_OPEN_URI | apsw.SQLITE_OPEN_READONLY)
 
     cursor = db.cursor()

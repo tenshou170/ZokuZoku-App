@@ -24,9 +24,6 @@ importers:
       '@tsconfig/svelte':
         specifier: ^5.0.2
         version: 5.0.4
-      '@types/vscode-webview':
-        specifier: ^1.57.5
-        version: 1.57.5
       rollup:
         specifier: ^4.24.3
         version: 4.53.3
@@ -341,9 +338,6 @@ packages:
 
   '@types/pug@2.0.10':
     resolution: {integrity: sha512-Sk/uYFOBAB7mb74XcpizmH0KOR2Pv3D2Hmrh1Dmy5BmK3MpdSa5kqZcg6EKBdklU0bFXX9gCfzvpnyUehrPIuA==}
-
-  '@types/vscode-webview@1.57.5':
-    resolution: {integrity: sha512-iBAUYNYkz+uk1kdsq05fEcoh8gJmwT3lqqFPN7MGyjQ3HVloViMdo7ZJ8DFIP8WOK74PjOEilosqAyxV2iUFUw==}
 
   '@vscode/codicons@0.0.35':
     resolution: {integrity: sha512-7iiKdA5wHVYSbO7/Mm0hiHD3i4h+9hKUe1O4hISAe/nHhagMwb2ZbFC8jU6d7Cw+JNT2dWXN2j+WHbkhT5/l2w==}
@@ -872,8 +866,6 @@ snapshots:
   '@types/estree@1.0.8': {}
 
   '@types/pug@2.0.10': {}
-
-  '@types/vscode-webview@1.57.5': {}
 
   '@vscode/codicons@0.0.35': {}
 

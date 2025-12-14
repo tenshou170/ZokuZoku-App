@@ -4,7 +4,7 @@
 ZokuZoku Web App is a standalone, web-based port of the ZokuZoku VSCode extension. It allows translators to view and edit UM:PD story timelines directly in a browser, independent of any IDE.
 
 > [!WARNING]
-> **PROTOTYPE ("SHELL") RELEASE**
+> **PROTOTYPE ("SHELL") RELEASE**:  
 > This project is currently a **functional prototype**.
 > *   **Core Capability**: It can scan your game directory, list stories, and load them into the editor.
 > *   **Missing Features**: IPC (Communication with the running game), Audio playback, and advanced editing features are currently **under development**.
