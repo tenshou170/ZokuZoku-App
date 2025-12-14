@@ -1,2 +1,2 @@
-# ZokuZoku-Web
-COMING SOON™
+# COMING SOON™
+
