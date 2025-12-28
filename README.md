@@ -1,66 +1,114 @@
-<img align="left" width="80" height="80" src="frontend/public/icon.png">
+<img align="left" width="80" height="80" src="src-tauri/icons/icon.png">
 
-# ZokuZoku Web App
-ZokuZoku Web App is a standalone, web-based port of the ZokuZoku VSCode extension. It allows translators to view and edit UM:PD story timelines directly in a browser, independent of any IDE.
+# ZokuZoku App
 
-> [!WARNING]
-> **PROTOTYPE ("SHELL") RELEASE**:  
-> This project is currently a **functional prototype**.
-> *   **Core Capability**: It can scan your game directory, list stories, and load them into the editor.
-> *   **Missing Features**: IPC (Communication with the running game), Audio playback, and advanced editing features are currently **under development**.
-> *   **Objective**: This release serves as a foundation for porting the full ZokuZoku experience to the web.
->
-> For a detailed breakdown of missing features and the porting plan, see [ROADMAP.md](ROADMAP.md).
->
-> *Always backup your data before using this tool.*
+A standalone app for translating UM:PD using Hachimi's translation framework.
 
-# Features
-- **Standalone Web Experience:** Runs entirely in your browser using a local backend. no VSCode required.
-- **No preprocessing or postprocessing:** All data used by ZokuZoku is dynamically generated the moment you access it. It keeps itself up-to-date with the game's assets without manual actions. Translated data is saved in the exact format Hachimi uses.
-- **User friendly interface:** Provides tree views that list translatable assets in a logical manner. The custom editor resembles the original VSCode interface, ensuring a familiar experience for existing users.
-- **Streamlined editing:** Accurate story previews with Hachimi's auto wrapping system.
-- **Powered by Modern Web Tech:** Built with [Svelte](https://svelte.dev/) and [FastAPI](https://fastapi.tiangolo.com/), replacing the VSCode extension host with a lightweight, dedicated web stack.
 
-# Installation & Getting Started
+![Release](https://github.com/tenshou170/ZokuZoku-App/actions/workflows/release.yml/badge.svg)
 
-### Prerequisites
-- **OS**: Linux (Primary support), Windows/macOS (Experimental)
-- **Python**: 3.10 or later
-- **Node.js**: 18 or later (with `pnpm`)
-- **Game Data**: UM:PD (DMM/Steam JP) installed locally.
+> [!NOTE]
+> This project is a standalone port of the VS Code extension that does not require VS Code. It uses Tauri for the backend and SvelteKit for the frontend.
 
-### 1. Start the Backend
-The backend acts as the bridge to your local game files and Unity assets.
+## Features
+
+- **Story Explorer**: Browse and read main, event, and character story timelines
+- **Race Stories Explorer**: View race scripts and metadata
+- **Lyrics Explorer**: View song lyrics extracted from game assets
+- **MDB Editor**: View and search master database text entries
+- **Localize Dict**: View translation dictionary entries
+- **Audio Support**: Listen to voice lines (requires `wannacri` and `ffmpeg`)
+- **Dynamic Configuration**: Easily point to your game data and translation folders
+
+## Installation
+
+### Download
+
+Get the latest direct binaries for Windows, macOS, or Linux from [Releases](https://github.com/tenshou170/ZokuZoku-App/releases).
+
+### Development Setup
+
+If you want to run the app from source:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/tenshou170/ZokuZoku-App.git
+   cd ZokuZoku-App
+   ```
+
+2. **Install Frontend dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up Python Virtual Environment**
+   ```bash
+   python3 -m venv .venv
+   
+   # Linux/macOS
+   source .venv/bin/activate
+   pip install -r python/requirements.txt
+   
+   # Windows
+   .venv\Scripts\activate
+   pip install -r python/requirements.txt
+   ```
+
+4. **Run the App**
+   ```bash
+   pnpm tauri dev
+   ```
+
+## Prerequisites
+
+### System Requirements
+
+- **Rust**: [1.92.0+](https://www.rust-lang.org/tools/install) (Current-stable as of Dec 2025)
+- **Node.js**: 20+ (LTS recommended)
+- **pnpm**: Latest
+- **Python**: 3.13
+- **FFmpeg**: Required for audio extraction (`wannacri`)
+  - Linux: `sudo apt install ffmpeg`
+  - macOS: `brew install ffmpeg`
+  - Windows: Download binaries and add to PATH
+
+### UM:PD Game Files
+
+- DMM or Steam installation (JP version)
+- Game data downloaded (usually in `AppData/LocalLow/Cygames/umamusume`)
+
+## Usage
+
+### First-Time Setup
+
+1. **Launch the app** via `pnpm tauri dev` or the executable.
+2. **Open Settings**: Expand the **SETTINGS** section in the bottom-left sidebar.
+3. **Select Game Data**: Click **Select Game Data** and point it to your Umamusume installation folder (where `dat`, `meta`, and `master` folders are located).
+4. **Select Tran. Path**: Click **Select Tran. Path** and point it to any folder containing your `localize_dump.json`.
+
+### Exploring Assets
+
+- **Stories Explorer**: Expand categories like *Main Story* to see individual stories. Click one to open the editor.
+- **Audio**: When viewing a story, voice lines will be extracted and made available for playback automatically.
+- **Tools**: Use the **MDB EDITORS** or **LYRICS EXPLORER** to view other game data.
+
+## Development
+
+The project structure is as follows:
+- `src-tauri/`: Rust backend (Tauri)
+- `src/`: SvelteKit frontend
+- `python/`: Python sidecars for Unity asset processing
 
 ```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate.fish # or .bash / .ps1
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+pnpm tauri build
 ```
-*Port: 8000*
 
-### 2. Start the Frontend
-The frontend provides the visual editor interface.
+## Acknowledgement
 
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-*Port: 5173*
+- [ZokuZoku-Edge](https://github.com/thshafi170/ZokuZoku-Edge) - Original Base Repository
+- [Mario0051/ZokuZoku](https://github.com/Mario0051/ZokuZoku) - Active Upstream for VS Code extension
+- [Tauri](https://tauri.app/) - Desktop App Framework
+- [Svelte](https://svelte.dev/) - Frontend Framework
 
-### 3. Usage
-Open `http://localhost:5173` in your browser.
-- The app will attempt to automatically detect your game installation.
-- Use the **Story Browser** to find and select a story.
-- The story will load in the editor, ready for translation.
-
-# Development
-*Please use the pnpm package manager while working on this project.*
-
-For detailed setup instructions, architecture overview, and contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-# License
+## License
 [GNU GPLv3](LICENSE)

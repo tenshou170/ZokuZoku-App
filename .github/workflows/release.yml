@@ -1,0 +1,106 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest" # ARM64 (M1/M2)
+            args: "--target aarch64-apple-darwin"
+            artifact_name: "macos-arm64"
+            bin_path: "src-tauri/target/aarch64-apple-darwin/release/zokuzoku"
+          - platform: "windows-latest"
+            args: ""
+            artifact_name: "windows-x64"
+            bin_path: "src-tauri/target/release/zokuzoku.exe"
+          - platform: "ubuntu-22.04"
+            args: ""
+            artifact_name: "linux-x64"
+            bin_path: "src-tauri/target/release/zokuzoku"
+
+    runs-on: ${{ matrix.platform }}
+    outputs:
+      app_version: ${{ steps.tauri.outputs.appVersion }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: npm install -g pnpm && pnpm install
+
+      - name: build
+        uses: tauri-apps/tauri-action@v0
+        id: tauri
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zokuzoku-${{ matrix.artifact_name }}
+          path: ${{ matrix.bin_path }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: zokuzoku-*
+          merge-multiple: false
+
+      - name: Create Release and Upload Assets
+        shell: bash
+        run: |
+          # Get version from tauri.conf.json
+          VERSION=$(grep -oP '"version":\s*"\K[^"]+' src-tauri/tauri.conf.json)
+          TAG="v$VERSION"
+
+          echo "Creating release $TAG"
+          gh release create "$TAG" --draft --title "ZokuZoku $TAG" --notes "See the assets to download this version." || true
+
+          # Process artifacts
+          mkdir upload
+          for dir in artifacts/zokuzoku-*; do
+            platform=$(basename "$dir" | sed 's/zokuzoku-//')
+            cp "$dir"/* "upload/zokuzoku-$platform"
+            # Add .exe extension if it's windows
+            if [[ "$platform" == "windows-x64" ]]; then
+               mv "upload/zokuzoku-windows-x64" "upload/zokuzoku-windows-x64.exe"
+            fi
+          done
+
+          echo "Uploading assets..."
+          gh release upload "$TAG" upload/* --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

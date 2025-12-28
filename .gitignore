@@ -1,37 +1,16 @@
-# General
 .DS_Store
-.base_dir
+node_modules
+/build
+/.svelte-kit
+/package
 .env
-.idea/
-.vscode/
-*.log
-tmp/
-dist/
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
-# Python / Backend
-backend/__pycache__/
-backend/*.py[cod]
-backend/*$py.class
-backend/venv/
-backend/.venv/
-backend/env/
-backend/.pytest_cache/
-backend/.coverage
-backend/htmlcov/
-*.sqlite
-*.db
-
-# Node / Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.svelte-kit/
-frontend/build/
-frontend/.npmrc
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/pnpm-debug.log*
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
+# Python
+.venv
+venv
+*.pyc
+__pycache__
